@@ -13,15 +13,15 @@
 
 | Num. | PASO | OBJETO / MECANISMO | PATRÓN |
 | :---: | :--- | :--- | :---: |
-| 1 | El navegador hace POST /pagos/inscripcion | Enrutador del framework (dado por el marco) | — |
+| 1 | El navegador hace POST /pagos/inscripcion | Enrutador del framework (dado por el marco) |
 | 2 | Antes del controlador, la petición pasa por sesión, bitácora y encabezados comunes | Middleware / pipeline de interceptores | Chain of Responsibility |
-| 3 | El controlador recibe la petición ya autenticada y delega el cobro | Controlador de pagos (orquesta, no decide el cómo) | — |
+| 3 | El controlador recibe la petición ya autenticada y delega el cobro | Controlador de pagos (orquesta, no decide el cómo) | 
 | 4 | Se elige el mecanismo de cobro según lo que llegó en el POST: tarjeta, SPEI o ventanilla | Objeto MetodoDeCobro intercambiable, uno por tipo | Strategy |
-| 5 | Se verifica que ese folio/clic no se haya procesado ya, antes de ejecutar el cobro | Guardia de idempotencia sobre el identificador del intento | — |
+| 5 | Se verifica que ese folio/clic no se haya procesado ya, antes de ejecutar el cobro | Guardia de idempotencia sobre el identificador del intento | 
 | 6 | La estrategia elegida llama al banco, que responde con "créditos" y códigos 00/01 | Adapter hacia el protocolo del banco | Adapter |
 | 7 | La llamada al banco está envuelta para no colgar la petición si el banco no responde | Envoltorio alrededor del Adapter | Circuit Breaker |
 | 8 | Traducida la respuesta a pendiente/acreditado/rechazado, se persiste el resultado | Repositorio de pagos (consulta reutilizable) | Repository |
 | 9 | Si quedó acreditado, se publica el hecho "pago acreditado" en vez de llamar directo a cada interesado | Publicador de eventos de dominio | Observer |
 | 10 | Los interesados reaccionan por su lado: alta de materia, correo, aviso a caja | Suscriptores independientes del Observer | Observer |
-| 11 | El correo, al ser suscriptor aparte y no parte de la transacción de alta, puede fallar sin impedir el alta | Frontera transaccional que cubre solo pasos 8 y 10-alta; correo queda fuera, best-effort | — |
-| 12 | Se responde al cliente con el resultado | Respuesta HTTP armada por el controlador | — |
+| 11 | El correo, al ser suscriptor aparte y no parte de la transacción de alta, puede fallar sin impedir el alta | Frontera transaccional que cubre solo pasos 8 y 10-alta; correo queda fuera, best-effort 
+| 12 | Se responde al cliente con el resultado | Respuesta HTTP armada por el controlador | 
