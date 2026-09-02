@@ -1,0 +1,27 @@
+# MISIÓN 1 #
+
+| PROBLEMA | CAPA | PATRÓN | POR QUÉ ESE | CUÁNDO NO APLICARLA |
+| :--- | :---: | :---: | :---: | ---: |
+| Cada trámite copia el bloque de "¿hay sesión?", bitácora y encabezado; cambiar la caducidad de la sesión obliga a tocar los 40 archivos | Políticas transversales | Chain of Responsibility (middleware/pipeline) | No es Decorator (que envuelve una instancia concreta) ni Facade (que solo simplifica una interfaz sin correr en cada petición). El problema es un comportamiento que debe ejecutarse antes de cualquier ruta de forma uniforme | Si la regla solo la usa una página aislada y nunca se reutilizará, montar un pipeline es sobreingeniería; basta una función auxiliar |
+| pagar.php es un switch de 200 líneas; cada banco nuevo obliga a editarlo. El banco habla de "créditos"/códigos 00/01 mientras que el reglamento habla de pendiente/acreditado/rechazado | Aplicación / dominio + integración | Strategy (formas de cobro) + Adapter (protocolo del banco) | Adapter no es Facade: Facade simplifica una interfaz, Adapter traduce entre dos vocabularios incompatibles. Strategy no es un if/switch: encapsula cada forma de cobro como objeto intercambiable, abierto a nuevos bancos sin tocar los existentes | Si solo hubiera un método de pago y ningún banco nuevo previsto, Strategy sobra; si el banco ya hablara el vocabulario del dominio, Adapter sobra |
+| La plantilla del kardex ejecuta consultas SQL para armar la tabla de calificaciones; los reportes de constancias duplican esas mismas consultas con otro formato | Datos | Repository (o Query Object compartido) | No es Active Record: Repository separa el acceso a datos del modelo de dominio, permitiendo que kardex y constancias reutilicen la misma consulta sin duplicar SQL | Si solo una vista usara esa consulta y no hubiera reutilización prevista, crear una capa Repository es sobreingeniería; basta la consulta directa |
+| Al acreditarse el pago, el mismo script da de alta materias, dispara un correo y avisa a caja; si el correo falla a veces no se registra el alta; el doble clic cobra dos cargos | Aplicación / dominio | Observer (evento "pago acreditado") + guardia de idempotencia | Observer no sustituye a Unit of Work: desacopla a quién avisar, pero no define qué operaciones deben confirmarse o revertirse juntas. Que el correo falle y a veces no se dé de alta es un problema de frontera transaccional, no de notificación | Si solo hubiera un interesado y nunca se fuera a añadir otro, Observer añade indirección innecesaria; conectar directo basta |
+| La app móvil pide un JSON mínimo (folio, saldo, plazo); el kiosco pide HTML con escudo y tabla; hoy el kiosco hace doce peticiones para pintar el inicio | Presentación / integración | Facade (agrega las doce llamadas) + una vista/presentador por cliente | No es Adapter: aquí no hay un protocolo externo incompatible que traducir, sino un subsistema complejo que hay que simplificar en un único punto de entrada | Si solo existiera la app y nunca un kiosco, no vale la pena construir una fachada para "unificar" nada |
+| El servicio de un banco y el validador de CURP externo se caen con frecuencia; mientras no responden, el estudiante no puede ni consultar el kardex, que no depende de esos colaboradores | Integración | Circuit Breaker con aislamiento de esa dependencia | No es un simple Retry ni un Proxy: el objetivo no es reintentar o interceptar una llamada puntual, sino detectar fallas repetidas, fallar rápido y evitar que ese fallo se propague a funciones independientes como el kardex | Si el servicio externo fuera indispensable y sin alternativa razonable, el circuit breaker solo pospone el error; hay que comunicarlo, no fingir tolerancia |
+
+# MISIÓN 2 #
+
+| Num. | PASO | OBJETO / MECANISMO | PATRÓN |
+| :---: | :--- | :--- | :---: |
+| 1 | El navegador hace POST /pagos/inscripcion | Enrutador del framework (dado por el marco) | — |
+| 2 | Antes del controlador, la petición pasa por sesión, bitácora y encabezados comunes | Middleware / pipeline de interceptores | Chain of Responsibility |
+| 3 | El controlador recibe la petición ya autenticada y delega el cobro | Controlador de pagos (orquesta, no decide el cómo) | — |
+| 4 | Se elige el mecanismo de cobro según lo que llegó en el POST: tarjeta, SPEI o ventanilla | Objeto MetodoDeCobro intercambiable, uno por tipo | Strategy |
+| 5 | Se verifica que ese folio/clic no se haya procesado ya, antes de ejecutar el cobro | Guardia de idempotencia sobre el identificador del intento | — |
+| 6 | La estrategia elegida llama al banco, que responde con "créditos" y códigos 00/01 | Adapter hacia el protocolo del banco | Adapter |
+| 7 | La llamada al banco está envuelta para no colgar la petición si el banco no responde | Envoltorio alrededor del Adapter | Circuit Breaker |
+| 8 | Traducida la respuesta a pendiente/acreditado/rechazado, se persiste el resultado | Repositorio de pagos (consulta reutilizable) | Repository |
+| 9 | Si quedó acreditado, se publica el hecho "pago acreditado" en vez de llamar directo a cada interesado | Publicador de eventos de dominio | Observer |
+| 10 | Los interesados reaccionan por su lado: alta de materia, correo, aviso a caja | Suscriptores independientes del Observer | Observer |
+| 11 | El correo, al ser suscriptor aparte y no parte de la transacción de alta, puede fallar sin impedir el alta | Frontera transaccional que cubre solo pasos 8 y 10-alta; correo queda fuera, best-effort | — |
+| 12 | Se responde al cliente con el resultado | Respuesta HTTP armada por el controlador | — |
