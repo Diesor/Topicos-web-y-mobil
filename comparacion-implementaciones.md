@@ -1,5 +1,14 @@
 # Comparación entre las dos implementaciones de entregas
 
+Equipo:
+- Diego Soria Magos
+- Eduardo Osvaldo Rodriguez Gutierrez 
+- Diego Rivera Cisneros
+- Rodrigo Vega Espinoza
+- Gonzalo Garcia Chavex
+
+
+
 | Aspecto | Implementación 1 | Implementación 2 | Observación |
 |---|---|---|---|
 | Arquitectura | Modular y organizada por responsabilidades | Monolítica dentro de un único método | La primera es mucho más clara y comprobable. |
@@ -16,7 +25,6 @@
 | Complejidad técnica | Mayor inicial, pero más ordenada | Menor al inicio, pero más difícil de sostener | La complejidad se paga con claridad y control. |
 | Calidad de código | Superior | Inferior | La primera está más alineada con buenas prácticas de software. |
 
----
 
 ## Patrones de diseño presentes en la implementación 1
 
@@ -56,7 +64,6 @@ Ejemplos:
 - `EntregaMotocicleta`
 
 
----
 
 ## Buenas prácticas observadas en la implementación 1
 
@@ -70,7 +77,6 @@ Ejemplos:
 
 En resumen, la implementación 1 aplica principios de diseño que favorecen la escalabilidad y la calidad del software.
 
----
 
 ## Problemas de la implementación 2
 
@@ -84,8 +90,7 @@ La segunda implementación cumple la funcionalidad básica, pero presenta varias
 - Los cálculos de costo, tiempo y capacidad se repiten.
 - El sistema es frágil ante nuevos tipos de proveedor o medio.
 
-Este enfoque puede funcionar para prototipos pequeños, pero no es recomendable en sistemas con crecimiento esperado.
 
----
+
 
 
