@@ -5,7 +5,7 @@ Equipo:
 - Eduardo Osvaldo Rodriguez Gutierrez 
 - Diego Rivera Cisneros
 - Rodrigo Vega Espinoza
-- Gonzalo Garcia Chavex
+- Gonzalo Garcia Chavez
 
 
 
