@@ -1,6 +1,5 @@
 # Comparación entre las dos implementaciones de entregas
 
-
 | Aspecto | Implementación 1 | Implementación 2 | Observación |
 |---|---|---|---|
 | Arquitectura | Modular y organizada por responsabilidades | Monolítica dentro de un único método | La primera es mucho más clara y comprobable. |
@@ -90,12 +89,3 @@ Este enfoque puede funcionar para prototipos pequeños, pero no es recomendable 
 ---
 
 
-## Conclusión
-
-La implementación 1 es claramente superior en términos de diseño de software. Aun cuando la implementación 2 parece más simple a primera vista, en la práctica es menos mantenible, menos extensible y más propensa a errores.
-
-La diferencia principal es que la primera aplica principios de diseño que permiten evolucionar el sistema sin romperlo, mientras que la segunda acumula complejidad en un solo punto.
-
-En un proyecto real, la solución con patrones de diseño es la opción recomendada por su claridad, escalabilidad y robustez.
-
----
