@@ -391,5 +391,3 @@ De 1 a 4.8, el modelo encuentra unos 27 drones más por pliegue (de unos 190) y 
 - **Mantener el modelo sin balancear con las reglas del negocio.** Con reglas es el más exacto (93.6 %), el más preciso con el dron (96.1 %) y su «confianza» sigue siendo una frecuencia real.
 - **Si la empresa decide que perder un dron cuesta más que mandar uno de más,** probar un peso moderado (alrededor de 3) y reentrenar cuando cambie la flota.
 - Su punto débil, que conviene decir con claridad: no sugiere dron por debajo de 7.01 km (0 de 9 drones cortos en la prueba), y las reglas no pueden arreglarlo.
-
-Se califica el argumento, no la conclusión: «sí balancear» con costos que lo justifiquen también es válido.
