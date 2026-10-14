@@ -179,7 +179,6 @@ Se entrenó el mismo árbol de `entrenar_arbol.py`, con las mismas semillas, con
 
 # Actividad 4 — ¿Qué columnas usa de verdad el modelo?: resultados
 
-
 ## Predicción
 Catorce columnas de la más importante a la menos importante para elegir el medio. 
 distancia_km ✓
