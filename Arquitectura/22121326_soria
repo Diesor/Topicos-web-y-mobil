@@ -1,0 +1,48 @@
+# Actividad — Monolito con API frente a microservicios
+
+Nombre: Diego Soria Magos
+Matrícula: 22121326
+
+## 1. Clasificar la plataforma actual
+    +---------------------------+   HTTP/JSON   +-----------------------------------------+
+    | Cliente                   | ------------> | UN solo proceso: python manage.py       |
+    | (HTML / Flutter)          |  GET/POST     | runserver (Django, puerto 8000)         |
+    | URL: http://localhost:8000|               |                                         |
+    | /entregas/recomendar/     | <------------ |  entregas/views.py                      |
+    +---------------------------+     JSON      |     |-> recomendador.py (joblib.load)   |
+                                                |     |-> reglas.py                       |
+                                                |     |-> medios.py                       |
+                                                |     '-> base de datos                  |
+                                                +-----------------------------------------+
+
+**Es un monolito + API**: el cliente está separado del servidor, pero toda la lógica corre en un unico proceso Django, con un solo despliegue y base de datos.
+Evidencia: se arranca un unico comando (manage.py runserver) y la vista usa el modelo con un import y un joblib.load dentro del proceso, no con una llamada de red.
+
+## 2. La trampa de los endpoints
+Se rechaza la afirmación. Tener /entregas/recomendar y /entregas/hola solo significa que hay una API: el HTML aparte está separado del servidor, y eso es lo que  logra una API (separar clientes del servidor). Los microservicios hacen algo distinto: separan servidores entre sí. Aquí ambos endpoints viven en la misma app Django, con el mismo proceso, el mismo despliegue y la misma base de datos; si uno se cae, se cae el otro. Dos rutas en un mismo proceso no son dos servicios. Serían microservicios si `recomendar` corriera en su propio
+proceso, con su propio puerto y despliegue, y Pedidos lo llamara por HTTP.
+
+## 3. La misma operación en dos mundos
+* **El flujo en el monolito + API de hoy:**
+1. El cliente hace `POST /entregas/recomendar/`; entra `views.recomendar`.
+2. La vista llama `recomendador.predecir(pedido)`: es un `import` y una llamada a función en memoria, sin red ni serialización. El modelo responde "dron".
+3. La vista llama `reglas` (también en memoria): el dron no cumple las restricciones (peso/distancia/clima) y se corrige a "moto".
+4. `medios.py` planea con la moto y la vista responde un JSON. Todo ocurre en un proceso; si algo lanza una excepción, falla toda la petición.
+
+* **El flujo si recomendador fuera otro servicio:**
+1. Cliente → Pedidos (salto de red 1).
+2. Pedidos → Servicio de IA, `POST /predecir` (salto de red 2): hay que serializar a JSON, esperar y deserializar.
+3. Pedidos aplica `reglas` y `medios` en memoria y responde (vuelve el salto 1). Si la IA no responde, Pedidos no puede quedarse esperando: pone un timeout corto, usa un circuit breaker y recurre a un respaldo (solo `reglas`, o una heurística como "paquete pequeño en zona urbana → moto") marcando el resultado como "sin recomendación de IA". El pedido se guarda y se consulta igual. La diferencia con el `import` es que ahora la llamada puede tardar, fallar o no responder, y hay que diseñar para eso.
+
+## 4. Decisión de la empresa
+Recomiendo **extraer solo el servicio de IA**.
+1. **Ritmo de cambio distinto:** el modelo (~50 MB) se reentrena cada semana y Pedidos casi no cambia. Con un monolito, cada reentrenamiento obliga a redesplegar todo, incluido el cobro y el alta de pedidos, que deben ser estables.
+2. **Recursos y dependencias distintas:** la IA necesita pandas, scikit-learn y memoria para cargar el modelo, y el archivo `.joblib` depende de la versión exacta de scikit-learn. Aislarla evita que esas dependencias contaminen Pedidos y permite escalarla por separado.
+3. **Aislamiento de fallos con poco costo:** la IA ya es un colaborador que puede caerse y que Pedidos puede tolerar con un respaldo. Partir también pedidos y notificaciones sumaría red, observabilidad y consistencia distribuida sin beneficio, porque esas partes casi no cambian.
+
+## 5. Un solo corte
+**Microservicio: Recomendador (IA).**
+- **Se lleva:** `recomendador.py` (carga del modelo y predicción), los `.joblib`, los scripts de entrenamiento (`entrenar_modelo.py`,`entrenar_arbol.py`), el CSV de datos y sus dependencias (pandas, scikit-learn, joblib). Expone algo como `POST /recomendar` que devuelve `Sugerencia{medio, motivo}`.
+- **Se queda en Pedidos:** `views.py`, `medios.py` (la planeación por medio), `reglas.py`, la base de datos y la autenticación.
+- **Por qué `reglas.py` no se va:** son las reglas de negocio (por ejemplo, las restricciones del dron) y cambian con el negocio, no con el modelo. Además son el respaldo cuando la IA no responde, y deben seguir funcionando sin ella.
+- **Por qué este corte y no un servicio por archivo:** el criterio es separar lo que cambia a otro ritmo, usa otros recursos y puede fallar de forma independiente. `reglas` y `medios` se llaman en la misma petición, son pequeños y cambian junto con Pedidos; separarlos solo añadiría saltos de red y fallos posibles sin nada a cambio, es decir, un monolito distribuido.
