@@ -1,5 +1,5 @@
 #  EXAMEN — MICROSERVICIOS, GATEWAY Y EL MONOLITO CON API #
-# Diego Soria Magos - 22121326#
+# Diego Soria Magos - 22121326 #
 
 1. 
 a) En la parte de la API, el compañero cree que al exponerlo ya separa clientes del servidor, en eso sí cumple, pero se equivoca al pensar que la API dice algo sobre cómo está organizado por dentro el servidor: una API es un contrato de cara al cliente y es compatible con un monolito. 
